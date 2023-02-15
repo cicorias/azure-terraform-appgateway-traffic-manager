@@ -1,0 +1,7 @@
+*.bak
+.terraform/
+
+
+
+# hcl locks
+.terraform.lock.hcl
