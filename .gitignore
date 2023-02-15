@@ -5,3 +5,7 @@
 
 # hcl locks
 .terraform.lock.hcl
+
+# tfstate files
+*.tfstate
+*.backup
