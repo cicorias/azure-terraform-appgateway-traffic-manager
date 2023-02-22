@@ -1,0 +1,20 @@
+#!/bin/bash
+
+apt-get update \
+    && apt-get upgrade -y \
+	&& set x+ \
+    && apt-get install curl git \
+    && rm -rf /usr/local/go ||: \
+    && curl -OL https://go.dev/dl/go1.20.1.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf go1.20.1.linux-amd64.tar.gz \
+    && echo "PATH=$PATH:/usr/local/go/bin" >> /home/azureuser/.bashrc \
+    && export PATH=$PATH:/usr/local/go/bin \
+    && go version \
+	&& cd /home/azureuser \
+	&& rm -rf ./app ||: \
+    && git clone https://github.com/cicorias/golang-diag-web-app.git app \
+	&& chown -R azureuser:azureuser . \
+	&& cd app \
+	&& su -c "PATH=$PATH:/usr/local/go/bin go build -o webserver -v ./..." azureuser \
+	&& echo "done building .. starting app..." \
+	&& su -c "nohup ./webserver > output.txt &" azureuser

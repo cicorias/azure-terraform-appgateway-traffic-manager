@@ -8,20 +8,22 @@ resource "azurerm_resource_group" "this_resource_group" {
 
 
 # ------------------- Azure Key Vault -------------------
-resource "azurerm_key_vault" "key_vault" {
-  enabled_for_deployment          = true
-  enabled_for_template_deployment = true
-  location                        = azurerm_resource_group.this_resource_group.location
-  name                            = "scicoriakv2" //TODO: move to variable
-  resource_group_name             = azurerm_resource_group.this_resource_group.name
-  sku_name                        = "standard" //TODO: move to variable
-  soft_delete_retention_days      = 7
-  purge_protection_enabled        = false
-  tenant_id                       = data.azurerm_client_config.current.tenant_id
-  depends_on = [
-    azurerm_resource_group.this_resource_group,
-  ]
-}
+# resource "azurerm_key_vault" "key_vault" {
+#   enabled_for_deployment          = true
+#   enabled_for_template_deployment = true
+#   enable_rbac_authorization       = true
+#   location                        = azurerm_resource_group.this_resource_group.location
+#   name                            = "scicoriakv2" //TODO: move to variable
+#   resource_group_name             = azurerm_resource_group.this_resource_group.name
+#   sku_name                        = "standard" //TODO: move to variable
+#   soft_delete_retention_days      = 7
+#   purge_protection_enabled        = false
+#   tenant_id                       = data.azurerm_client_config.current.tenant_id
+
+#   depends_on = [
+#     azurerm_resource_group.this_resource_group,
+#   ]
+# }
 
 // TODO: the following not used now -- as loading pfx from file
 # resource "azurerm_key_vault_certificate" "ag_certificate" {

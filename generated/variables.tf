@@ -1,7 +1,7 @@
 variable "resource_group_name" {
   type        = string
   description = "The name of the resource group in which to create the resources."
-  default     = "scicoria-rg"
+  default     = "scicoria-rg2"
 }
 
 variable "resource_group_location" {
@@ -13,6 +13,9 @@ variable "resource_group_location" {
 variable "vm_pool_instance_count" {
   type        = number
   description = "The number of VMs to create in the VM pool."
-  default     = 2
+  default     = 4
 }
 
+# variable "vm-type" {
+  
+# }

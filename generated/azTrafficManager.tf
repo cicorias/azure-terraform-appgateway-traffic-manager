@@ -1,10 +1,19 @@
+resource "random_string" "atm_name_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+locals {
+  atm_name = format("%s-%s", "spc", random_string.atm_name_suffix.id)
+}
 
 resource "azurerm_traffic_manager_profile" "atfm_profile" {
-  name                   = "baseatfprofile" // TODO: Make this a variable
+  name                   = local.atm_name
   resource_group_name    = azurerm_resource_group.this_resource_group.name
   traffic_routing_method = "Performance" // TODO: make this a variable
   dns_config {
-    relative_name = "baseatfprofile" // TODO: Make this a variable
+    relative_name = local.atm_name
     ttl           = 60
   }
   monitor_config {

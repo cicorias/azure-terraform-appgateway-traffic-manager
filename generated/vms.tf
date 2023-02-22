@@ -23,11 +23,11 @@ resource "random_password" "password" {
   special = true
   lower   = true
   upper   = true
-  number  = true
+  numeric = true
 }
 
 resource "azurerm_windows_virtual_machine" "vm" {
-  count               = var.vm_pool_instance_count
+  count               = 0 /// var.vm_pool_instance_count
   name                = "myVM${count.index + 1}"
   resource_group_name = azurerm_resource_group.this_resource_group.name
   location            = azurerm_resource_group.this_resource_group.location
@@ -53,18 +53,65 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 }
 
-resource "azurerm_virtual_machine_extension" "vm-extensions" {
-  count                = var.vm_pool_instance_count
-  name                 = "vm${count.index + 1}-ext"
-  virtual_machine_id   = azurerm_windows_virtual_machine.vm[count.index].id
-  publisher            = "Microsoft.Compute"
-  type                 = "CustomScriptExtension"
-  type_handler_version = "1.10"
+# resource "azurerm_virtual_machine_extension" "vm-extensions" {
+#   count                = var.vm_pool_instance_count
+#   name                 = "vm${count.index + 1}-ext"
+#   virtual_machine_id   = azurerm_windows_virtual_machine.vm[count.index].id
+#   publisher            = "Microsoft.Compute"
+#   type                 = "CustomScriptExtension"
+#   type_handler_version = "1.10"
 
-  settings = <<SETTINGS
-    {
-        "commandToExecute": "powershell Add-WindowsFeature Web-Server; powershell Add-Content -Path \"C:\\inetpub\\wwwroot\\Default.htm\" -Value $($env:computername)"
-    }
-SETTINGS
+#   settings = <<SETTINGS
+#     {
+#         "commandToExecute": "powershell Add-WindowsFeature Web-Server; powershell Add-Content -Path \"C:\\inetpub\\wwwroot\\Default.htm\" -Value $($env:computername)"
+#     }
+# SETTINGS
 
+# }
+
+
+# linux vm
+# Create a Linux virtual machine with cloud-init
+
+# Read in the public key from your local SSH key pair
+
+locals {
+  ssh_key_location = "~/.ssh/id_rsa.pub"
 }
+
+data "local_file" "ssh_pub_key" {
+  filename = pathexpand(local.ssh_key_location)
+}
+
+resource "azurerm_linux_virtual_machine" "vmlinux" {
+  count               = var.vm_pool_instance_count
+  name                = "myLinuxVM${count.index + 1}"
+  resource_group_name = azurerm_resource_group.this_resource_group.name
+  location            = azurerm_resource_group.this_resource_group.location
+  size                = "Standard_DS1_v2"
+  admin_username      = "azureuser"
+  custom_data         = base64encode("${file("./resources/cloud-init.txt")}")
+
+
+  network_interface_ids = [
+    azurerm_network_interface.nic[count.index].id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = data.local_file.ssh_pub_key.content
+  }
+}
+
