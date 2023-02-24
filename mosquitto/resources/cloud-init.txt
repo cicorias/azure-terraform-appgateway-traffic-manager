@@ -142,7 +142,7 @@ pattern write $dps/registrations/GET/iotdps-get-operationstatus/%u/#
 pattern read $dps/registrations/res/%u/#
 EOF
 
-    && && service mosquitto start \
+    && service mosquitto start \
 	&& cd /home/azureuser \
     && mkdir /home/azureuser/app ||: \
     && cd app \
