@@ -1,0 +1,149 @@
+#!/bin/bash
+set -x
+
+export DEBIAN_FRONTEND=noninteractive
+
+i=0
+tput sc
+while fuser /var/lib/apt/lists/lock >/dev/null 2>&1 ; do
+    case $(($i % 4)) in
+        0 ) j="-" ;;
+        1 ) j="\\" ;;
+        2 ) j="|" ;;
+        3 ) j="/" ;;
+    esac
+    tput rc
+    echo -en "\r[$j] Waiting for other software managers to finish..." 
+    sleep 0.5
+    ((i=i+1))
+done 
+
+
+apt-get update \
+    && apt-get -o DPkg::Lock::Timeout=-1 upgrade -y \
+    && apt-get install gnupg2 wget curl git -y \
+    && wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key \
+    && apt-key add mosquitto-repo.gpg.key \
+    && cd /etc/apt/sources.list.d/ \
+    && wget http://repo.mosquitto.org/debian/mosquitto-buster.list \
+    && apt-get update \
+    && apt-cache search mosquitto \
+    && apt-get install mosquitto -y \
+    && service mosquitto stop
+
+cat <<EOF > /etc/mosquitto/conf.d/mosquitto.conf
+port 8883
+cafile /etc/mosquitto/certs/ca.crt.pem
+certfile /etc/mosquitto/certs/server.crt.pem
+keyfile /etc/mosquitto/certs/server.key.pem
+log_dest stdout
+log_type error
+log_type warning
+log_type notice
+log_type information
+connection_messages true
+log_timestamp true
+require_certificate true
+use_identity_as_username true
+acl_file /etc/mosquitto/aclfile
+EOF
+
+cat <<EOF > /etc/mosquitto/certs/ca.crt.pem
+-----BEGIN CERTIFICATE-----
+MIIDpzCCAo+gAwIBAgIUZF2Jr33FtAPXptzdX4Frn07SbnwwDQYJKoZIhvcNAQEL
+BQAwYzELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5KMSEwHwYDVQQKDBhJbnRlcm5l
+dCBXaWRnaXRzIFB0eSBMdGQxEjAQBgNVBAsMCVJvb3QgYXV0aDEQMA4GA1UEAwwH
+Um9vdCBDQTAeFw0yMzAyMjQxMjMyMThaFw0yODA4MTYxMjMyMThaMGMxCzAJBgNV
+BAYTAlVTMQswCQYDVQQIDAJOSjEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQ
+dHkgTHRkMRIwEAYDVQQLDAlSb290IGF1dGgxEDAOBgNVBAMMB1Jvb3QgQ0EwggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDWe4jyKezmf/iIJAxb9ddXskew
+9njxrqBmgSTCDKeM9Wqt1edchyuSdgFznIpypAN+u1kTHZIrPB9+KcIzakiTpGxG
+LUIV/Syb1J/dKHv3Ia9fNx9OINwivsh2wHiJBptx5oX35tUr0h3uD4flGpuh70Lt
+hyhJT8s/MuGjgbd1kGdebaZKZPMO8KQVrPngYBp642n4QduQdGu/W7/+qNz0VH0C
+nAfbY6NnGZ37HSTynKpmmx5Q1tkuCLHB5v1yOrQCAknczX1REsIDGnBNBOpBWuoy
+c2w65u3j0lpPW0MLRJlBaf+sti9aTZkLtZtM+X1f/QHJtPv9PqS63s/kRBO1AgMB
+AAGjUzBRMB0GA1UdDgQWBBSIDoXEyMT2JPZ+9s0v771Jp6wkvjAfBgNVHSMEGDAW
+gBSIDoXEyMT2JPZ+9s0v771Jp6wkvjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3
+DQEBCwUAA4IBAQAz3jLnWpMhBZLu5j5xHBx4rgQlF9bUM+KRn2do4b85Al+D5ZHb
+ohgGsrv1R7xSV+AQyM1r6HaRdMqiW6aHdZuX2d1hkCQ23RRbdZZsaicGPYJNq5DZ
+kCnqHXry0yd18epiDSSL5rO8Ip41PMyNQKpBW2l3miVANi/XKK8JgO4y4BlFmlSR
+G9vUexcd41WYv29yGuL1AI/yqmfLJ+dkKA1OAIX1viOaWMvYQyPFbXtbUFzdu3I7
+L25DlHwiE8WHolAsDY8BMKmeh+Le1bueHyKCPDWofODNlliunJ3MdnYrvIRONImX
+APtplG0CKr8Kd843T6cco08UqhMa8+qdtjKx
+-----END CERTIFICATE-----
+EOF
+
+cat <<EOF > /etc/mosquitto/certs/server.crt.pem
+-----BEGIN CERTIFICATE-----
+MIIDTDCCAjQCFFCGOVogl2LVYp21APd9sSwVjz+qMA0GCSqGSIb3DQEBCwUAMGMx
+CzAJBgNVBAYTAlVTMQswCQYDVQQIDAJOSjEhMB8GA1UECgwYSW50ZXJuZXQgV2lk
+Z2l0cyBQdHkgTHRkMRIwEAYDVQQLDAlSb290IGF1dGgxEDAOBgNVBAMMB1Jvb3Qg
+Q0EwHhcNMjMwMjI0MTkxMjEwWhcNMjUwMTI0MTkxMjEwWjBiMQswCQYDVQQGEwJV
+UzELMAkGA1UECAwCTkoxCjAIBgNVBAcMAUQxDzANBgNVBAoMBlNlcnZlcjEPMA0G
+A1UECwwGc2VydmVyMRgwFgYDVQQDDA9tcXR0MS5jc2VndC5jb20wggEiMA0GCSqG
+SIb3DQEBAQUAA4IBDwAwggEKAoIBAQC29THqi/4gyj5r8Col8KKQ+8BZd18wYTcL
+J6L/W+b55apN+m3lBnwzVwdo/tb6hqM/sDcsnIYUFB7ZG05VKw14ezQQ5vIfWhNX
+wx4eYUTCRzAEavitWieMT077UVcHkeqHLS7UWm71fRb6D3Xkc9b6/fdQ2L6SXcfR
++Ot9S/nv9z3H+uUYpwLw4LyTtsXXRBBZfUZvbGgyaBYo46YSJPRm5HNBK3/NDe4B
+mTVeJA3GhfTMGPchHGBYGHP+979o6A7FC7kK9feTTsHTf3RpdDfkox4Q9zFnACan
+bihsksewYf9ZTc2EO5tcAUSgnk4A7fCtA/lK1Oz9rhN5zkuxIarFAgMBAAEwDQYJ
+KoZIhvcNAQELBQADggEBAMBsYmOTzSya+o90v54kYvragb17QrKltAGRvuUbDrsY
+SgjNxg/vrU14UyfnLOM9s/6qgbg/vOOVdeTFVDQ9jJ0kbLeYfIZZEFW6wm9uVlBm
+0g+gYm3y2kSynjt8tHYdlySLFpuhWSEJd3QdHqk05j3JXV6WKAtN78xjCEUo1pGq
+Oaq3nVH6KAvxPZ2UfQuKbOuQOOrDR/tZ0AvkwrUtKPF0SRpKs9d9ndctmzgzyYVR
+zosXBFfS0Dso+nB7gncxz0bxapI+ruObKrwOm+r8kYEeNOaqrq2Ia7nxU3D8NK5C
+paidziQcYHy3KlN4BBibe0MNIll7b0u/OsLfgKqy5gE=
+-----END CERTIFICATE-----
+EOF
+
+cat <<EOF > /etc/mosquitto/certs/server.key.pem
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAtvUx6ov+IMo+a/AqJfCikPvAWXdfMGE3Cyei/1vm+eWqTfpt
+5QZ8M1cHaP7W+oajP7A3LJyGFBQe2RtOVSsNeHs0EObyH1oTV8MeHmFEwkcwBGr4
+rVonjE9O+1FXB5Hqhy0u1Fpu9X0W+g915HPW+v33UNi+kl3H0fjrfUv57/c9x/rl
+GKcC8OC8k7bF10QQWX1Gb2xoMmgWKOOmEiT0ZuRzQSt/zQ3uAZk1XiQNxoX0zBj3
+IRxgWBhz/ve/aOgOxQu5CvX3k07B0390aXQ35KMeEPcxZwAmp24obJLHsGH/WU3N
+hDubXAFEoJ5OAO3wrQP5StTs/a4Tec5LsSGqxQIDAQABAoIBAEASWDvCcOm8yeV1
+At2sitHpSDBMrKo9sVAXvm5dGeNz+ZM7W1b0UXSNSswLSvALTIpWRMw7uHy5mx/+
+/wy2eg4yX0Z4ClzOZ625aAfNmo3K7lbtu07CHs11TLyYfLjq8c4LFbZKQUd5Wh2S
+Yn/xzVyyqfTHIt4RN5Qh7x4/CDVvsbvrGQYNmboPsuHIg29teTWndqFBMtt9Qr7p
+BuKWdgvjiDqW2L/9Y5F5sgK48TNHyBYRO6WHqHEJDY7Xb36AF7umEOeGnExGU7fs
+kpCv0Wn7SL8juwT1YYBeCC43jxEgnEiJs7jHOgx/RdsbHi6eVs0cbrerjHtRQKjO
+eZtv6lUCgYEA2z8F54CSl8WQzpwXS+OnnJQJmUptSvYgxvSZ1lTAPEOqQsmF3KrO
++7JJ3H11wuQZZsDw1KalUnLYQ29IhZYskbYAy6ywMQbJXvo5PZKbSFoYaYd5r15L
+CzW9OP0QpXdIe5oaU0Tam5ixX5iAUHfKS7v9AqSykkA5MAyARxgZATsCgYEA1aDZ
+5c/G4ImVL8WMHxQ6HvEzyCyd5JkRqo4jTzm22grfCTEsiEa6zsNMrQgLZcCghKdH
+TX3aP7atK7XarctJNg3UQRt8k//WWsJWhwBnVxlXWrUkeS5ZMQTl96dIQFqh/imc
+v3nwY2JYVZ4yejhjX+zrez+5eyIjKW4YX3BFQ/8CgYBO2cGz2sfeEc3coMK4Jm4X
+oB47pUrdVNvA8iOJs/1XLzbCwluEW2IJn7t0syJxLzv7epSixjRbDLa+uf0pHjN1
+TDHJDphnaXtuzyta+6khQlXZTkHzUkRHCdK99jXQbLAC1A93tyGwKCBSszQivJJi
+3n9GPhmDA9oNb9GKwB3uFQKBgQC+FkmtRsvVAjdgcaxz/yCUZdXIuYKpZVal56Id
+neJJdEDvwfS5Mg6JaphwoubZXKS4RMyadHDeHqNKcJ+r42Y6leWXJWkdnBlVWvV5
+XO+XPfJPwT06Iva0OoKSciRFNyBLsyVJ76vqExk83e5WeJRcR8llOtfFbCPTeqZv
+TcwkawKBgGGmSHaIZFyJC2q540m/jwpyYZumfl0InL4e6n+0j8d5o+ZRj5yDnCHX
+MZeeIKbMd734SSkVShjeIOzdLwxRE9duxqEgfbIERbDGevLulusr4h+vkhZdUyOW
+ypAfWbOHbJTK8Pe3MGesOXN/zlQQYPxb11nKuwazZbwNJ8PYeBjU
+-----END RSA PRIVATE KEY-----
+EOF
+
+cat <<EOF > /etc/mosquitto/aclfile
+user admin
+# dps subscribes to these topics
+## this is where devices send initial registration requests
+topic readwrite $dps/registrations/PUT/iotdps-register/#
+## this is where devices send operationa status requests
+topic readwrite $dps/registrations/GET/iotdps-get-operationstatus/#
+# this is where DPS responds with status
+topic readwrite $dps/registrations/res/#
+
+
+pattern write $dps/registrations/PUT/iotdps-register/%u/#
+pattern write $dps/registrations/GET/iotdps-get-operationstatus/%u/#
+pattern read $dps/registrations/res/%u/#
+EOF
+
+    && && service mosquitto start \
+	&& cd /home/azureuser \
+    && mkdir /home/azureuser/app ||: \
+    && cd app \
+    && chown -R azureuser:azureuser .

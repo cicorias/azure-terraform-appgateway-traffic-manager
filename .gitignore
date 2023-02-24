@@ -9,3 +9,7 @@
 # tfstate files
 *.tfstate
 *.backup
+
+
+mosquitto/resources/certs/
+mosquitto/.terraform.tfstate.lock.info
