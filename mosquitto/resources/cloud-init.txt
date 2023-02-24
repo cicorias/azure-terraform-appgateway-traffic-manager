@@ -20,16 +20,16 @@ done
 
 
 apt-get update \
-    && apt-get -o DPkg::Lock::Timeout=-1 upgrade -y \
-    && apt-get install gnupg2 wget curl git -y \
-    && wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key \
-    && apt-key add mosquitto-repo.gpg.key \
-    && cd /etc/apt/sources.list.d/ \
-    && wget http://repo.mosquitto.org/debian/mosquitto-buster.list \
-    && apt-get update \
-    && apt-cache search mosquitto \
-    && apt-get install mosquitto -y \
-    && service mosquitto stop
+&& apt-get -o DPkg::Lock::Timeout=-1 upgrade -y \
+&& apt-get install gnupg2 wget curl git -y \
+&& wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key \
+&& apt-key add mosquitto-repo.gpg.key \
+&& cd /etc/apt/sources.list.d/ \
+&& wget http://repo.mosquitto.org/debian/mosquitto-buster.list \
+&& apt-get update \
+&& apt-cache search mosquitto \
+&& apt-get install mosquitto -y \
+&& service mosquitto stop
 
 cat <<EOF > /etc/mosquitto/conf.d/mosquitto.conf
 port 8883
@@ -142,8 +142,8 @@ pattern write $dps/registrations/GET/iotdps-get-operationstatus/%u/#
 pattern read $dps/registrations/res/%u/#
 EOF
 
-    && service mosquitto start \
-	&& cd /home/azureuser \
-    && mkdir /home/azureuser/app ||: \
-    && cd app \
-    && chown -R azureuser:azureuser .
+service mosquitto start \
+&& cd /home/azureuser \
+&& mkdir /home/azureuser/app ||: \
+&& cd app \
+&& chown -R azureuser:azureuser .
