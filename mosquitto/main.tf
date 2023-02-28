@@ -66,3 +66,27 @@ resource "azurerm_network_security_rule" "local_ip" {
   resource_group_name         = azurerm_resource_group.this_resource_group.name
   network_security_group_name = azurerm_network_security_group.broker_nsg.name
 }
+
+resource "azurerm_dns_zone" "hudson_dns_zone" {
+  name                = "hudsonise.com"
+  resource_group_name = var.global_resource_group_name
+}
+
+resource "azurerm_dns_cname_record" "target" {
+  name                = "mqtt1"
+  zone_name           = azurerm_dns_zone.hudson_dns_zone.name
+  resource_group_name = azurerm_dns_zone.hudson_dns_zone.resource_group_name
+  ttl                 = 60
+  record              = azurerm_public_ip.broker_public_ip.fqdn
+}
+
+resource "azurerm_dns_txt_record" "example" {
+  name                = "@"
+  zone_name           = azurerm_dns_zone.hudson_dns_zone.name
+  resource_group_name = azurerm_dns_zone.hudson_dns_zone.resource_group_name
+  ttl                 = 300
+
+  record {
+    value = "MS=ms28151617"
+  }
+}
