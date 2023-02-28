@@ -1,6 +1,8 @@
 *.bak
 .terraform/
 
+# editor
+.idea
 
 
 # hcl locks
