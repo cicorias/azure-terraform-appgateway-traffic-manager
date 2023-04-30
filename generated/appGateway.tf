@@ -103,6 +103,21 @@ resource "azurerm_application_gateway" "app_gateway" {
   rewrite_rule_set {
     name = local.rewrite_rule_set_name
     rewrite_rule {
+      name          = "client_certificate"
+      rule_sequence = 102
+      condition {
+        ignore_case = true
+        negate      = false
+        variable    = "var_client_certificate_subject"
+        pattern     = "CN=(.*?)[,|$]"
+      }
+      request_header_configuration {
+        header_name  = "x-client-cn"
+        header_value = "{var_client_certificate_subject_1}"
+      }
+    }
+
+    rewrite_rule {
       name          = "client_certificate_mtls"
       rule_sequence = 100
       request_header_configuration {
@@ -172,7 +187,7 @@ resource "azurerm_application_gateway" "app_gateway" {
   }
   // this is the ca public cert that clients are signed with
   trusted_client_certificate {
-    data = file("./certs/ca_pub.pem")
+    data = file("./certs/azure-iot-test-only.chain.ca.cert.pem")
     name = local.trusted_client_certificate_chain_1
   }
 

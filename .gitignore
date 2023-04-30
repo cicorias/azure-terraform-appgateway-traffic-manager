@@ -13,3 +13,5 @@
 
 mosquitto/resources/certs/
 mosquitto/.terraform.tfstate.lock.info
+
+.DS_Store
